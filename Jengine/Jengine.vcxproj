@@ -127,6 +127,7 @@
     <ClInclude Include="src\GameScene.h" />
     <ClInclude Include="src\Input.h" />
     <ClInclude Include="src\Jengine.h" />
+    <ClInclude Include="src\DirectionalLightComponent.h" />
     <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\Model.h" />
     <ClInclude Include="src\ModelLoader.h" />
@@ -155,6 +156,10 @@
     <ClCompile Include="src\RenderSystem.cpp" />
     <ClCompile Include="src\ShaderLoader.cpp" />
     <ClCompile Include="src\TestSystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\basic.frag" />
+    <None Include="shaders\basic.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

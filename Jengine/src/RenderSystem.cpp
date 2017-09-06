@@ -13,10 +13,12 @@
 #include <glm\gtc\quaternion.hpp>
 #include <glm\gtx\quaternion.hpp>
 #include <glm/ext.hpp>
+#include "DirectionalLightComponent.h"
+#include <sstream>
 
 RenderSystem::RenderSystem(std::shared_ptr<EntityManager> entityManager) : System(entityManager)
 {
-	testShader = ShaderLoader::loadShader( "shaders/test.vert", "shaders/test.frag" );
+	testShader = ShaderLoader::loadShader( "shaders/basic.vert", "shaders/basic.frag" );
 }
 
 void RenderSystem::update( float delta )
@@ -25,7 +27,7 @@ void RenderSystem::update( float delta )
 	glClearColor( 0.3f, 0.3f, 0.3f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	glm::mat4 projection = glm::perspective( glm::radians( 45.0f ), (float)jengine.screenWidth / (float)jengine.screenHeight, 0.1f, 100.0f );
+	glm::mat4 projection = glm::perspective( glm::radians( 45.0f ), (float)jengine.screenWidth / (float)jengine.screenHeight, 0.1f, 1000.0f );
 	glm::mat4 view;
 	auto cameraEntities = entityManager->getEntitiesWithComponent<FPSCamera>();
 	if (cameraEntities.size() > 0) {
@@ -40,11 +42,19 @@ void RenderSystem::update( float delta )
 		std::cout << "No FPSCamera found..." << std::endl;
 	}
 
+	// Send all light stuff to shader
+	glUseProgram(testShader);
+	auto directionalLights = entityManager->getEntitiesWithComponent <DirectionalLightComponent>();
+	for (int i = 0; i < directionalLights.size(); i++) {
+		auto light = entityManager->getComponentFromEntity<DirectionalLightComponent>(directionalLights[i]);
+		ShaderLoader::setVector3f(testShader, ("directionalLights[" + std::to_string(i) + "].colour").c_str(), light->colour);
+		ShaderLoader::setVector3f(testShader, ("directionalLights[" + std::to_string(i) + "].direction").c_str(), light->direction);
+	}
+
 	for (GLuint entityID : entityManager->getEntitiesWithComponent<RenderComponent>())
 	{
 		std::shared_ptr<TransformComponent> positionData = entityManager->getComponentFromEntity<TransformComponent>( entityID );
 		std::shared_ptr<RenderComponent> renderData = entityManager->getComponentFromEntity<RenderComponent>( entityID );
-		glUseProgram( testShader );
 		glm::mat4 translationMatrix;
 		glm::mat4 rotationMatrix;
 		glm::mat4 scaleMatrix;
@@ -52,7 +62,7 @@ void RenderSystem::update( float delta )
 		rotationMatrix = glm::toMat4(positionData->rotation);
 		scaleMatrix = glm::scale(scaleMatrix, positionData->scale);
 
-		glm::mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+		glm::mat4 modelMatrix = positionData->localToWorld;
 
 		ShaderLoader::setMatrix4( testShader, "MVP", projection * view * modelMatrix );
 		ShaderLoader::setMatrix4(testShader, "model", modelMatrix);
